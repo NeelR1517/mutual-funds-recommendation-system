@@ -1,4 +1,4 @@
-# FundLens — Investor-Profile-Aware Fund Selector (India)
+# SahiMF — Investor-Profile-Aware Fund Selector (India)
 
 Mutual fund selection in India still runs on static star ratings and tip lists — those
 describe the *fund*, not the *investor*. FundLens recommends Indian mutual funds based on
