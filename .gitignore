@@ -1,0 +1,95 @@
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# Packaging / build
+build/
+dist/
+wheels/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Testing / linting caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Agent tooling (symlinks into local venvs)
+.agents/
+
+# ---------------------------------------------------------------------------
+# Node / frontend
+# ---------------------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vite/
+.next/
+.nuxt/
+.svelte-kit/
+*.tsbuildinfo
+
+# ---------------------------------------------------------------------------
+# Cached / generated data (large, reproducible artefacts)
+# ---------------------------------------------------------------------------
+backend/data/cache/
+backend/data/raw/
+prototype/data/cache/
+prototype/data/raw/
+data/cache/
+data/raw/
+
+# ---------------------------------------------------------------------------
+# Secrets & local config
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.yaml
+secrets.yml
+
+# ---------------------------------------------------------------------------
+# Editors & OS
+# ---------------------------------------------------------------------------
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------------------------
+# Logs & local databases
+# ---------------------------------------------------------------------------
+*.log
+logs/
+*.db
+*.sqlite3
+.streamlit/secrets.toml

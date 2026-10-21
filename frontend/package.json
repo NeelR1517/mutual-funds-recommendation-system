@@ -1,7 +1,7 @@
 {
   "name": "sahimf",
   "version": "1.0.0",
-  "description": "Investor-profile-aware mutual fund selector for India — transparent risk scoring, K-means cohorts, RandomForest vs SEBI Riskometer cross-check, SIP backtest vs Nifty 50.",
+  "description": "Investor-profile-aware mutual fund selector for India — live AMFI NAV data, category-relative scores, a constrained optimizer, a Nifty 500 proxy backtest and Monte Carlo projections.",
   "type": "module",
   "scripts": {
     "dev": "node scripts/serve.mjs",

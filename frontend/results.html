@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your plan — SahiMF</title>
+  <meta name="description" content="Your suitability target, optimized fund allocation, historical performance, Monte Carlo range, score basis and the full fund universe.">
+  <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHJlY3Qgd2lkdGg9JzMyJyBoZWlnaHQ9JzMyJyByeD0nOCcgZmlsbD0nIzYzNjZmMScvPjx0ZXh0IHg9JzE2JyB5PScyMycgdGV4dC1hbmNob3I9J21pZGRsZScgZm9udC1mYW1pbHk9J0FyaWFsLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTknIGZvbnQtd2VpZ2h0PSc3MDAnIGZpbGw9JyNmZmZmZmYnPlM8L3RleHQ+PC9zdmc+">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+  <script defer src="charts.js"></script>
+  <script defer src="core.js"></script>
+  <script defer src="results.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body data-page="results">
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="index.html"><span class="logo">◈</span>SahiMF</a>
+      <nav class="topnav">
+        <a href="index.html" data-nav="home">Overview</a>
+        <a href="quiz.html" data-nav="quiz">Take the quiz</a>
+        <a href="results.html" data-nav="results">My results</a>
+      </nav>
+      <span class="scope-chip"><span class="scope-dot"></span>Decision support · not advice</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="section dashboard-shell">
+      <div class="container">
+
+        <header class="page-head reveal" style="--d:.05s">
+          <span class="eyebrow"><span class="asterisk">✳</span> Your personalised dashboard</span>
+          <h1>Your <em>plan</em>, with the evidence.</h1>
+          <p class="lede">A suitability target, optimized fund weights, a five-year replay and a range
+            of projected outcomes. Open any fund to see its NAV and score breakdown.</p>
+        </header>
+
+        <div id="loadingCard" class="card state-card">
+          <span class="asterisk-pulse">✳</span>
+          <h2>Loading your plan…</h2>
+          <p class="sub">Calling the recommendation API and the fund universe.</p>
+        </div>
+
+        <div id="resultsGate" class="card gate-card" hidden>
+          <span class="launch-tag">✦ No profile yet</span>
+          <h2>Build your investor profile first</h2>
+          <p class="gate-sub">Four questions set your equity target, category mix and fund shortlist.
+            The backend does the rest.</p>
+          <div class="launch-actions">
+            <a class="btn primary" href="quiz.html">Take the quiz →</a>
+            <button type="button" class="btn" id="btnGateSample">⚡ Load a sample profile</button>
+          </div>
+        </div>
+
+        <div id="resultsMain" hidden>
+
+          <!-- Profile bar -->
+          <div id="profileSummaryBar" class="card profile-summary-bar reveal" style="--d:.1s">
+            <div class="summary-meta">
+              <span class="summary-pill-tag">✦ Profile matched</span>
+              <div class="summary-chips">
+                <span class="sum-item"><b>Age</b> <span id="sumAge">—</span> yrs</span>
+                <span class="sum-dot">·</span>
+                <span class="sum-item"><b>Horizon</b> <span id="sumHorizon">—</span> yrs</span>
+                <span class="sum-dot">·</span>
+                <span class="sum-item"><b>SIP</b> <span id="sumSip">—</span>/mo</span>
+                <span class="sum-dot">·</span>
+                <span class="sum-item"><b>Risk</b> <span id="sumRisk" class="sum-app-val">—</span></span>
+              </div>
+            </div>
+            <a class="btn small" href="quiz.html" id="btnRetake">✎ Retake quiz</a>
+          </div>
+
+          <!-- Section navigation -->
+          <nav class="section-nav reveal" style="--d:.14s" aria-label="Dashboard sections">
+            <a href="#overview">Overview</a>
+            <a href="#allocation">Allocation</a>
+            <a href="#performance">Performance</a>
+            <a href="#projection">Monte Carlo</a>
+            <a href="#scoring">Score basis</a>
+            <a href="#universe">Fund universe</a>
+            <a href="#method">Method</a>
+          </nav>
+
+          <!-- 01 · OVERVIEW -->
+          <section id="overview" class="dash-section">
+            <div class="section-heading">
+              <span class="eyebrow"><span class="asterisk">01</span> Plan at a glance</span>
+              <h2>What the model decided — and why.</h2>
+              <p class="sub">Your answers set the equity share. The score ranks funds inside their
+                category. The optimizer turns that shortlist into weights. The debt / cash gap is
+                left explicit because this data covers equity funds only.</p>
+            </div>
+
+            <div id="planKpis" class="kpi-grid"></div>
+
+            <div class="grid2">
+              <div class="card">
+                <div class="card-head">
+                  <h3>How this plan was built</h3>
+                  <span class="chip" id="planRange">—</span>
+                </div>
+                <ol id="pipeline" class="pipeline"></ol>
+                <p class="note" id="pipelineNote"></p>
+              </div>
+              <div class="card">
+                <div class="card-head">
+                  <h3>Category mix: target vs optimizer</h3>
+                  <span class="chip" id="profileLabel">—</span>
+                </div>
+                <div id="categoryMix" class="mix-list"></div>
+                <p class="note">The optimizer may move each category a few points from target while
+                  respecting position and volatility limits.</p>
+              </div>
+            </div>
+
+            <div id="warningPanel"></div>
+          </section>
+
+          <!-- 02 · ALLOCATION -->
+          <section id="allocation" class="dash-section">
+            <div class="section-heading">
+              <span class="eyebrow"><span class="asterisk">02</span> Recommended allocation</span>
+              <h2>Where the equity sleeve goes.</h2>
+              <p class="sub">Weights are shares of the equity sleeve. Amounts apply the same weights to
+                your monthly plan. Click any fund for its NAV and score details.</p>
+            </div>
+
+            <div class="grid2">
+              <div class="card">
+                <div class="card-head">
+                  <h3>Fund weights</h3>
+                  <span class="chip" id="allocationCount">—</span>
+                </div>
+                <div id="weightList" class="weight-list"></div>
+              </div>
+              <div class="card">
+                <div class="card-head">
+                  <h3>Where every ₹100 goes</h3>
+                  <span class="chip">Equity + gap</span>
+                </div>
+                <div id="bucketSummary" class="bucket-summary"></div>
+                <p class="note" id="bucketNote"></p>
+              </div>
+            </div>
+
+            <div class="card allocation-card">
+              <div class="card-head">
+                <h3>Full allocation</h3>
+                <span class="note-inline">Click a row to open the fund</span>
+              </div>
+              <div class="tablewrap tablewrap-bare">
+                <table class="data allocation-table" id="allocationTable"></table>
+              </div>
+            </div>
+          </section>
+
+          <!-- 03 · PERFORMANCE -->
+          <section id="performance" class="dash-section">
+            <div class="section-heading">
+              <span class="eyebrow"><span class="asterisk">03</span> Historical performance</span>
+              <h2>How the sleeve behaved in the past five years.</h2>
+              <p class="sub">A monthly replay of the final weights. The benchmark is an equal-weight
+                composite of index funds already in the universe — a Nifty 500 proxy, not the official TRI.</p>
+            </div>
+
+            <div id="performanceKpis" class="kpi-grid"></div>
+
+            <div class="grid2">
+              <div class="card chartcard">
+                <div class="card-head">
+                  <h3>Value of ₹1 invested</h3>
+                  <span class="chip" id="perfWindow">—</span>
+                </div>
+                <canvas id="perfChart"></canvas>
+              </div>
+              <div class="card chartcard">
+                <div class="card-head">
+                  <h3>Drawdown from the previous peak</h3>
+                  <span class="chip">Worst fall</span>
+                </div>
+                <canvas id="drawdownChart"></canvas>
+              </div>
+            </div>
+
+            <div class="callout">
+              <b>About the benchmark</b>
+              <p>The market series is an equal-weight composite of Nifty 50, Nifty 500, Midcap 150
+                and Smallcap 250 index funds. It carries fund expenses and tracking error, so it is
+                a fair comparison, not an official index level.</p>
+            </div>
+          </section>
+
+          <!-- 04 · MONTE CARLO -->
+          <section id="projection" class="dash-section">
+            <div class="section-heading">
+              <span class="eyebrow"><span class="asterisk">04</span> Monte Carlo projection</span>
+              <h2>A range of outcomes, not a forecast.</h2>
+              <p class="sub">The simulation resamples the portfolio’s recent monthly returns and
+                applies your SIP plan. The spread shows how much the ending value depends on the
+                order of returns.</p>
+            </div>
+
+            <div id="projectionKpis" class="kpi-grid"></div>
+
+            <div class="card chartcard">
+              <div class="card-head">
+                <h3>Simulated value range over the horizon</h3>
+                <span class="chip" id="projectionYears">—</span>
+              </div>
+              <canvas id="projectionChart"></canvas>
+              <p class="note" id="projectionNote"></p>
+            </div>
+
+            <div class="callout warn">
+              <b>Use the downside, not the median</b>
+              <p>The 5th percentile is the more useful planning number. Fees, taxes, exit loads and
+                changing interest rates are not modelled, and returns are sampled independently.</p>
+            </div>
+          </section>
+
+          <!-- 05 · SCORE BASIS -->
+          <section id="scoring" class="dash-section">
+            <div class="section-heading">
+              <span class="eyebrow"><span class="asterisk">05</span> Score basis</span>
+              <h2>Every score is a weighted set of category percentiles.</h2>
+              <p class="sub">Missing metrics are dropped rather than filled, and the remaining weights
+                are rescaled. That keeps the result on a 0–100 scale that is fair to younger funds.</p>
+            </div>
+
+            <div class="grid2">
+              <div class="card">
+                <div class="card-head">
+                  <h3>Metric weights</h3>
+                  <span class="chip">Rules, not ML</span>
+                </div>
+                <div id="scoreWeights" class="score-weights"></div>
+                <p class="note" id="scoreFormula"></p>
+              </div>
+              <div class="card">
+                <div class="card-head">
+                  <h3>Inspect one fund</h3>
+                  <span class="chip">Evidence</span>
+                </div>
+                <label class="select-label" for="scoreFundSelect">Fund</label>
+                <select id="scoreFundSelect" class="select-wide"></select>
+                <div id="scoreSummary" class="score-summary"></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <h3>Metric contributions</h3>
+                <span class="note-inline" id="scoreMissing"></span>
+              </div>
+              <div id="scoreParts" class="score-parts"></div>
+            </div>
+          </section>
+
+          <!-- 06 · UNIVERSE -->
+          <section id="universe" class="dash-section">
+            <div class="section-heading">
+              <span class="eyebrow"><span class="asterisk">06</span> Fund universe</span>
+              <h2>Explore every fund, filter, and open the evidence.</h2>
+              <p class="sub">These are the metrics behind the scores. Click a row or a point on the
+                risk–return map to load a fund’s NAV and category-relative percentiles.</p>
+            </div>
+
+            <div class="explore-tools">
+              <input id="fundSearch" type="search" placeholder="Search fund or AMC…" aria-label="Search funds">
+              <select id="categoryFilter" aria-label="Filter by category"></select>
+              <select id="sortFilter" aria-label="Sort funds">
+                <option value="score">Sort: quality score</option>
+                <option value="cagr_3y">Sort: 3-year CAGR</option>
+                <option value="cagr_5y">Sort: 5-year CAGR</option>
+                <option value="sip_xirr">Sort: SIP XIRR</option>
+                <option value="sharpe_3y">Sort: Sharpe</option>
+                <option value="vol_3y">Sort: volatility</option>
+                <option value="max_drawdown">Sort: max drawdown</option>
+              </select>
+              <label class="check-row"><input id="poolOnly" type="checkbox" checked> Only the quality pool</label>
+              <span class="chip" id="universeCount">—</span>
+            </div>
+
+            <div class="card chartcard">
+              <div class="card-head">
+                <h3>Risk vs return</h3>
+                <span class="note-inline">Bubble colour = category · click for details</span>
+              </div>
+              <canvas id="scatter"></canvas>
+              <p class="note">Up and to the right means more return for more volatility. The table
+                below is the same filtered set.</p>
+            </div>
+
+            <div class="tablewrap">
+              <table class="data" id="fundTable"></table>
+            </div>
+            <div id="universeMore" class="show-more"></div>
+          </section>
+
+          <!-- 07 · METHOD -->
+          <section id="method" class="dash-section">
+            <div class="section-heading">
+              <span class="eyebrow"><span class="asterisk">07</span> Method &amp; limits</span>
+              <h2>No black boxes, and no pretend certainty.</h2>
+              <p class="sub">The public data, the formulas, the settings used for this run, and the
+                things this model deliberately does not claim.</p>
+            </div>
+
+            <div id="methodGrid" class="method-grid"></div>
+
+            <div class="grid2">
+              <div class="card">
+                <div class="card-head">
+                  <h3>Settings used for this run</h3>
+                  <span class="chip">From /meta</span>
+                </div>
+                <table class="settings-table" id="settingsTable"></table>
+              </div>
+              <div class="card">
+                <div class="card-head">
+                  <h3>What the data does not contain</h3>
+                  <span class="chip warn">Read me</span>
+                </div>
+                <ul class="limit-list">
+                  <li><b>No AUM, expense ratio, manager or holdings.</b> mfapi.in does not publish
+                    them, so the score cannot judge size, cost or style drift.</li>
+                  <li><b>No official index TRI.</b> Benchmarks are equal-weight composites of index
+                    funds with tracking error and expenses.</li>
+                  <li><b>Survivorship bias.</b> Only live schemes appear in the feed.</li>
+                  <li><b>Inferred categories.</b> Labels come from fund names and category text.</li>
+                  <li><b>Past returns do not persist.</b> A high score is evidence about the past,
+                    not a promise about the future.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div id="methodStats" class="stat-row"></div>
+            <p class="note" id="disclaimer"></p>
+          </section>
+
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="container">
+        <b>SahiMF</b> — filters, matches, ranks and explains; the final call stays with the investor.
+        Educational use only — not investment advice. Data: AMFI via api.mfapi.in. Built
+        <span id="builtOn">—</span>.
+      </div>
+    </footer>
+
+    <!-- Fund detail modal -->
+    <div class="modal-bg" id="fundModal" role="dialog" aria-modal="true" aria-labelledby="mName">
+      <div class="modal">
+        <div class="modal-head">
+          <div>
+            <h3 id="mName"></h3>
+            <div class="sub" id="mSub"></div>
+            <div class="chips-row" id="mChips"></div>
+          </div>
+          <button class="x" id="mClose" type="button" aria-label="Close fund details">✕</button>
+        </div>
+        <div id="mLoading" class="muted-line">Loading NAV and score evidence…</div>
+        <canvas id="mNavChart"></canvas>
+        <div class="mgrid" id="mMetrics"></div>
+        <div class="card-inline" id="mReason"></div>
+        <div id="mScore"></div>
+      </div>
+    </div>
+
+  </main>
+</body>
+
+</html>

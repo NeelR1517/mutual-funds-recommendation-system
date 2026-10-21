@@ -116,6 +116,17 @@
         ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
         ctx.fillText(cfg.yFmt ? cfg.yFmt(t) : px(t), PADX - 8, Y(t));
       }
+      // optional zero line (useful for drawdowns)
+      if (cfg.zeroLine && ymin < 0 && ymax > 0) {
+        ctx.strokeStyle = css('var(--line-focus)', '#334155');
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(PADX, Y(0)); ctx.lineTo(w - PADR, Y(0)); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = css('var(--faint)', '#64748b');
+        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        ctx.fillText('0%', PADX - 8, Y(0));
+      }
+
       // x ticks
       const nt = Math.min(7, Math.max(3, Math.floor(w / 120)));
       for (let i = 0; i <= nt; i++) {
@@ -251,5 +262,151 @@
     setup(canvas, cfg, render);
   }
 
-  window.Charts = { line, scatter };
+  // ------------------------------------------------------- projection band
+  function band(canvas, cfg) {
+    const PADX = 58, PADR = 16, PADT = 22, PADB = 30;
+
+    const render = (cv) => {
+      const { ctx, w, h } = prep(cv, cfg.height || 320);
+      const points = cfg.bands || [];
+      if (!points.length) return;
+
+      const values = [];
+      for (const point of points) {
+        values.push(point.p5, point.p95);
+        if (cfg.invested) values.push(cfg.invested[point.month]);
+      }
+      let ymin = Math.min(...values);
+      let ymax = Math.max(...values);
+      const pad = (ymax - ymin) * 0.08 || 1;
+      ymin -= pad;
+      ymax += pad;
+
+      const maxMonth = points[points.length - 1].month;
+      const X = (month) => PADX + (month / Math.max(1, maxMonth)) * (w - PADX - PADR);
+      const Y = (value) => PADT + (1 - (value - ymin) / (ymax - ymin)) * (h - PADT - PADB);
+
+      ctx.font = '10.5px Inter, system-ui, sans-serif';
+      for (const tick of niceTicks(ymin, ymax, 5)) {
+        ctx.strokeStyle = css('var(--line)', '#1e293b');
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(PADX, Y(tick)); ctx.lineTo(w - PADR, Y(tick)); ctx.stroke();
+        ctx.fillStyle = css('var(--faint)', '#64748b');
+        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        ctx.fillText(cfg.yFmt ? cfg.yFmt(tick) : String(tick), PADX - 8, Y(tick));
+      }
+
+      const tickCount = Math.min(6, Math.max(3, Math.floor(w / 130)));
+      for (let i = 0; i <= tickCount; i++) {
+        const month = Math.round((maxMonth * i) / tickCount);
+        ctx.fillStyle = css('var(--faint)', '#64748b');
+        ctx.textAlign = i === 0 ? 'left' : i === tickCount ? 'right' : 'center';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(
+          cfg.xFmt ? cfg.xFmt(month) : `${month}m`,
+          X(month),
+          h - 8
+        );
+      }
+
+      function fillBand(lowKey, highKey, color, alpha) {
+        ctx.beginPath();
+        points.forEach((point, index) => {
+          const x = X(point.month);
+          const y = Y(point[highKey]);
+          index ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        });
+        [...points].reverse().forEach((point) => {
+          ctx.lineTo(X(point.month), Y(point[lowKey]));
+        });
+        ctx.closePath();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = css(color, '#6366f1');
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      fillBand('p5', 'p95', 'var(--brand)', 0.12);
+      fillBand('p25', 'p75', 'var(--brand)', 0.2);
+
+      ctx.beginPath();
+      points.forEach((point, index) => {
+        const x = X(point.month);
+        const y = Y(point.p50);
+        index ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      });
+      ctx.strokeStyle = css('var(--brand)', '#6366f1');
+      ctx.lineWidth = 2.4;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      if (cfg.invested) {
+        ctx.beginPath();
+        points.forEach((point, index) => {
+          const x = X(point.month);
+          const y = Y(cfg.invested[point.month] || 0);
+          index ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        });
+        ctx.strokeStyle = css('var(--faint)', '#64748b');
+        ctx.lineWidth = 1.6;
+        ctx.setLineDash([5, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Legend
+      const legend = [
+        ['var(--brand)', 'Median'],
+        ['var(--brand)', '25th–75th percentile', 0.35],
+        ['var(--brand)', '5th–95th percentile', 0.18],
+        ['var(--faint)', 'Contributions'],
+      ];
+      let lx = PADX;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      for (const [color, label, alpha = 1] of legend) {
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = css(color, '#6366f1');
+        ctx.fillRect(lx, 5, 12, 4);
+        ctx.globalAlpha = 1;
+        lx += 17;
+        ctx.fillStyle = css('var(--muted)', '#94a3b8');
+        ctx.font = '10.5px Inter, system-ui, sans-serif';
+        ctx.fillText(label, lx, 10);
+        lx += ctx.measureText(label).width + 16;
+      }
+
+      cfg.__hover = (event, c) => {
+        const rect = c.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        let closest = points[0];
+        for (const point of points) {
+          if (Math.abs(X(point.month) - mouseX) < Math.abs(X(closest.month) - mouseX)) {
+            closest = point;
+          }
+        }
+        render(c);
+        const context = c.getContext('2d');
+        context.beginPath();
+        context.arc(X(closest.month), Y(closest.p50), 4, 0, 7);
+        context.fillStyle = css('var(--brand)', '#6366f1');
+        context.fill();
+        context.strokeStyle = css('var(--card)', '#212124');
+        context.lineWidth = 2;
+        context.stroke();
+        showTT(
+          event.clientX,
+          event.clientY,
+          `<b>Month ${closest.month}</b><br>` +
+            `Median ${cfg.yFmt ? cfg.yFmt(closest.p50) : closest.p50}<br>` +
+            `5th–95th ${cfg.yFmt ? cfg.yFmt(closest.p5) : closest.p5} – ` +
+            `${cfg.yFmt ? cfg.yFmt(closest.p95) : closest.p95}`
+        );
+      };
+    };
+
+    setup(canvas, cfg, render);
+  }
+
+  window.Charts = { line, scatter, band };
 })();

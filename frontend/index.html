@@ -4,507 +4,210 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SahiMF — Investor-Profile-Aware Fund Selector</title>
+  <title>SahiMF — Fund quality, matched to the investor</title>
   <meta name="description"
-    content="Indian mutual fund recommendations matched to your age, horizon, SIP and risk appetite — with transparent scoring, K-means cohorts, a RandomForest cross-check of SEBI labels, and a SIP backtest vs Nifty 50.">
+    content="Indian mutual fund recommendations matched to your age, horizon and risk tolerance. Category-relative quality scores, a constrained portfolio optimizer, a Nifty 500 proxy backtest and Monte Carlo projections.">
+  <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHJlY3Qgd2lkdGg9JzMyJyBoZWlnaHQ9JzMyJyByeD0nOCcgZmlsbD0nIzYzNjZmMScvPjx0ZXh0IHg9JzE2JyB5PScyMycgdGV4dC1hbmNob3I9J21pZGRsZScgZm9udC1mYW1pbHk9J0FyaWFsLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTknIGZvbnQtd2VpZ2h0PSc3MDAnIGZpbGw9JyNmZmZmZmYnPlM8L3RleHQ+PC9zdmc+">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
-  <script src="data/funds-data.js"></script>
-  <script defer src="charts.js"></script>
-  <script defer src="app.js"></script>
-  <style>
-    /* inline critical font-ish speedup not needed; stylesheet below */
-  </style>
+  <script defer src="core.js"></script>
+  <script defer src="home.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 
-<body>
+<body data-page="home">
 
   <header class="topbar">
     <div class="container topbar-inner">
-      <a class="brand" href="#top"><span class="logo">◈</span>SahiMF</a>
+      <a class="brand" href="index.html"><span class="logo">◈</span>SahiMF</a>
       <nav class="topnav">
-        <a href="#profile" id="navProfile">My profile</a>
-        <a href="#explore">Explore funds</a>
-        <a href="#method">Method</a>
+        <a href="index.html" data-nav="home">Overview</a>
+        <a href="quiz.html" data-nav="quiz">Take the quiz</a>
+        <a href="results.html" data-nav="results">My results</a>
       </nav>
       <span class="scope-chip"><span class="scope-dot"></span>Decision support · not advice</span>
     </div>
   </header>
 
-  <main id="top">
+  <main class="home-main">
 
     <!-- =========================================================== HERO -->
-    <section class="hero">
-      <div class="container">
+    <section class="hero hero-home">
+      <div class="orb orb-a"></div>
+      <div class="orb orb-b"></div>
+      <div class="container hero-inner">
         <div class="hero-center">
-          <span class="eyebrow"><span class="asterisk">✳</span> Investor-Profile-Aware Fund Selector · India</span>
-          <h1>Star ratings describe the fund.<br><em>We match the investor.</em></h1>
-          <p class="lede">A 24-year-old with a 20-year horizon and a 52-year-old three years from retirement
-            should never see the same “top funds”. SahiMF studies <b>real NAV history</b> for
-            <span id="statFunds">…</span> Indian funds, sorts them into <b>data-driven risk cohorts</b>,
-            cross-checks each fund against <b>SEBI’s Riskometer labels</b> with a RandomForest, and ranks
-            the right bucket for <b>you</b> — showing the reasoning behind every pick.
+          <span class="eyebrow reveal" style="--d:.05s"><span class="asterisk">✳</span> Built from live AMFI NAV data · India</span>
+          <h1 class="reveal" style="--d:.12s">Quality scores describe the fund.<br><em>Your plan fits the investor.</em></h1>
+          <p class="lede reveal" style="--d:.2s">
+            A 24-year-old with a 20-year horizon and a 52-year-old three years from retirement
+            should not see the same portfolio. SahiMF compares each fund with its own category,
+            sizes an equity sleeve from <b>your age, horizon and risk tolerance</b>, then lets a
+            constrained optimizer decide the weights. Every number is traced back to real NAV history.
           </p>
-          <div class="hero-actions">
-            <a class="btn primary" href="#profile" id="heroStartQuiz">Reveal my risk score →</a>
-            <a class="btn" href="#explore">Browse the universe</a>
+          <div class="hero-actions reveal" style="--d:.28s">
+            <a class="btn primary btn-lg" id="ctaPrimary" href="quiz.html">Take the 4-question quiz →</a>
+            <button class="btn btn-lg" id="btnHomeDemo" type="button">⚡ Try a sample profile</button>
+          </div>
+          <div class="hero-status reveal" style="--d:.34s" id="dataStatus">
+            <span class="status-dot"></span> Connecting to the API…
           </div>
         </div>
+
         <div class="hero-stats">
-          <div class="stat"><b id="statFunds2">—</b><span>Indian funds studied (Direct-Growth)</span></div>
-          <div class="stat"><b id="statPoints">—</b><span>NAV points · mfapi.in / AMFI</span></div>
-          <div class="stat"><b id="statCohorts">—</b><span>risk cohorts via K-means</span></div>
-          <div class="stat"><b id="statAcc">—</b><span>RF cross-check CV accuracy</span></div>
+          <div class="stat reveal" style="--d:.4s"><b class="num" id="statFunds">—</b><span>Funds with enough live history</span></div>
+          <div class="stat reveal" style="--d:.46s"><b class="num" id="statPool">—</b><span>Funds in the quality pool</span></div>
+          <div class="stat reveal" style="--d:.52s"><b class="num" id="statNav">—</b><span>Daily NAV observations</span></div>
+          <div class="stat reveal" style="--d:.58s"><b class="num" id="statCategories">—</b><span>Equity categories scored separately</span></div>
         </div>
       </div>
     </section>
 
-    <!-- =========================================================== PROFILE -->
-    <!-- =========================================================== PROFILE / QUIZ -->
-    <section class="section" id="profile">
+    <!-- =========================================================== WHAT YOU GET -->
+    <section class="section">
       <div class="container">
-        
-        <!-- ==================== QUIZ LAUNCHER PROMPT CARD ==================== -->
-        <div id="quizPromptCard" class="card quiz-launch-card">
-          <div class="launch-content">
-            <span class="launch-tag">✦ Personalized Fund Matching</span>
-            <h2>Tell us about you</h2>
-            <p class="sub">Answer 4 quick questions about your age, investment horizon, monthly SIP capacity, and drawdown tolerance to get a mathematically matched portfolio.</p>
-            <div class="launch-actions">
-              <button type="button" class="btn primary" id="btnStartQuiz">Start Risk Quiz →</button>
-              <button type="button" class="btn" id="btnLaunchSample">⚡ Load sample profile</button>
-            </div>
-          </div>
+        <div class="section-heading">
+          <span class="eyebrow"><span class="asterisk">01</span> What this dashboard answers</span>
+          <h2>Four questions, one explainable plan.</h2>
+          <p class="sub">The prototype’s separate analysis pages are folded into one readable flow: what was
+            screened, why each fund scores well, how the money is split, and what history says about the result.</p>
         </div>
 
-        <!-- ==================== DASHBOARD PROFILE SUMMARY BAR ==================== -->
-        <div id="profileSummaryBar" class="card profile-summary-bar" hidden>
-          <div class="summary-meta">
-            <span class="summary-pill-tag">✦ Profile Matched</span>
-            <div class="summary-chips">
-              <span class="sum-item"><b>Age:</b> <span id="sumAge">30</span> yrs</span>
-              <span class="sum-dot">·</span>
-              <span class="sum-item"><b>Horizon:</b> <span id="sumHorizon">10</span> yrs</span>
-              <span class="sum-dot">·</span>
-              <span class="sum-item"><b>SIP:</b> <span id="sumSip">₹10,000</span>/mo</span>
-              <span class="sum-dot">·</span>
-              <span class="sum-item"><b>Appetite:</b> <span id="sumApp" class="sum-app-val">Balanced</span></span>
-            </div>
-          </div>
-          <button type="button" class="btn small" id="btnRetakeQuiz">✎ Retake quiz</button>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <span class="feature-kicker">Fund quality</span>
+            <h3>Is this fund good — for its category?</h3>
+            <p>Nine return, risk, consistency and momentum metrics are percentile-ranked inside
+              large, mid, small, flexi and index. A small-cap fund is compared with small caps,
+              never with a large-cap fund.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-kicker">Suitability</span>
+            <h3>How much equity belongs in my plan?</h3>
+            <p>Age, horizon and risk tolerance set an equity target with hard caps for short
+              horizons. The debt / cash gap stays explicit because this universe contains equity funds only.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-kicker">Optimizer</span>
+            <h3>Which funds get how much weight?</h3>
+            <p>Up to two funds per category enter a long-only optimizer with 3–30% position
+              bounds, category bands and a volatility budget. You see the final weights and the target mix side by side.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-kicker">Evidence</span>
+            <h3>What happened in the past?</h3>
+            <p>A five-year monthly replay compares the equity sleeve with a Nifty 500 proxy.
+              Two thousand Monte Carlo paths then show the range of possible SIP outcomes — not a forecast.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================== UNIVERSE -->
+    <section class="section">
+      <div class="container">
+        <div class="section-heading">
+          <span class="eyebrow"><span class="asterisk">02</span> The screened universe</span>
+          <h2>Same categories, separate scoreboards.</h2>
+          <p class="sub">Every category is scored on its own scale. Uneven category sizes are topped up
+            with the best remaining funds, so the 200-fund candidate pool does not waste slots.</p>
         </div>
 
-        <!-- ==================== STEP 1: SCORE CARD & COHORT MAPPING ==================== -->
-        <div class="card score-dashboard-card" id="scoreCard" hidden>
-          <div class="score-dash-grid">
-            <!-- Left: Gauge & Verdict -->
-            <div class="score-dash-left">
-              <div class="gauge">
-                <svg viewBox="0 0 154 96" width="100%">
-                  <path d="M12 84 A65 65 0 0 1 142 84" fill="none" stroke="#1e293b" stroke-width="13"
-                    stroke-linecap="round" />
-                  <defs>
-                    <linearGradient id="gg" x1="0" x2="1">
-                      <stop offset="0" stop-color="#6366f1" />
-                      <stop offset="1" stop-color="#8b5cf6" />
-                    </linearGradient>
-                  </defs>
-                  <path id="gaugeArc" d="M12 84 A65 65 0 0 1 142 84" fill="none" stroke="url(#gg)" stroke-width="13"
-                    stroke-linecap="round" stroke-dasharray="0 400" />
-                </svg>
-                <div style="text-align:center;margin-top:-58px">
-                  <div class="score-num num" id="scoreNum">—</div>
-                  <div style="font-size:11px;color:var(--faint);font-weight:600;letter-spacing:.05em">RISK SCORE / 100
-                  </div>
-                </div>
-                <div style="text-align:center;margin-top:34px;font-size:13.5px;font-weight:700" id="scoreBand"></div>
-              </div>
-            </div>
-
-            <!-- Right: Breakdown, Formula & Cohort Link -->
-            <div class="score-dash-right">
-              <div class="breakdown" id="breakdown"></div>
-              <div class="formula" id="scoreFormula"></div>
-              <div class="map-line" id="mapText"></div>
-              <div class="cohort-override-row">
-                <select id="cohortSel" title="Manual override"></select>
-                <span class="hint">Not convinced? Override the model's mapping manually.</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- results -->
-        <div id="results" hidden>
-          <h2 style="margin-top:44px">Step 2 · Your cohort on the risk map</h2>
-          <p class="sub">K-means clustered all funds purely from fund behaviour (volatility, drawdowns, returns,
-            consistency). Your score lands you in the nearest one — click any cohort to explore, or override above.</p>
-          <div class="cohorts" id="cohortStrip"></div>
-
-          <h2 style="margin-top:36px">Step 3 · Rank funds <span style="color:var(--brand)">your way</span></h2>
-          <div class="card" style="margin-bottom:20px">
-            <h3>Score weights <span class="hint" style="display:inline;font-weight:400">— default: return 40 ·
-                consistency 20 · drawdown 20 · cost 10 · size 10</span></h3>
-            <div class="weights" id="weightsBox" style="margin-top:12px"></div>
-            <div class="presets" id="presetRow"></div>
-          </div>
-          <div id="shortlistTitle" style="margin:20px 0 14px;font-size:17px;font-weight:700"></div>
-          <div class="fundcards" id="shortlist"></div>
-
-          <!-- ================================================ BACKTEST -->
-          <h2 style="margin-top:44px">Step 4 · Proof it works — SIP backtest</h2>
-          <p class="sub">The top-5 basket at equal split, replayed over real NAVs against a Nifty 50 index fund (proxy).
-            Monthly SIP on the same schedule. Past performance ≠ future results.</p>
+        <div class="grid2">
           <div class="card">
-            <div class="bt-controls">
-              <span style="font-weight:600;font-size:14px">Monthly SIP</span>
-              <input id="btAmt" type="number" min="1000" step="500" value="10000">
-              <div class="tabs" id="btTabs">
-                <button data-y="1">1 year</button>
-                <button data-y="3" class="active">3 years</button>
-                <button data-y="5">5 years</button>
-              </div>
+            <div class="card-head">
+              <h3>Where the candidate pool comes from</h3>
+              <span class="chip">Universe → pool</span>
             </div>
-            <div id="btOut" hidden>
-              <canvas id="btChart"></canvas>
-              <table class="bt-table" id="btTable"></table>
-              <div class="bt-note" id="btVerdict"></div>
+            <div id="categoryCounts" class="count-list">
+              <p class="muted-line">Loading category counts…</p>
             </div>
+            <div class="legend-row">
+              <span><i class="legend-swatch muted"></i>Full universe</span>
+              <span><i class="legend-swatch brand"></i>Top pool</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>The screening pipeline</h3>
+              <span class="chip" id="pipelineDate">—</span>
+            </div>
+            <ol class="pipeline">
+              <li><b>Direct-Growth only</b><span id="pipeCandidates">—</span></li>
+              <li><b>Long enough history</b><span>At least 1.5 years and 300 daily NAVs, with a recent quote.</span></li>
+              <li><b>Category classification</b><span id="pipeFunds">—</span></li>
+              <li><b>Quality pool</b><span id="pipePool">—</span></li>
+            </ol>
+            <p class="note">No AUM, expense ratio or holdings are used: mfapi.in does not publish them.
+              The score is about observed return and risk, not fund size or cost.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- =========================================================== EXPLORE -->
-    <section class="section" id="explore">
+    <!-- =========================================================== HOW IT WORKS -->
+    <section class="section hiw">
       <div class="container">
-        <h2>Explore the universe</h2>
-        <p class="sub">Every fund, its computed metrics, its K-means cohort, and the RandomForest-vs-SEBI cross-check.
-          Click any row for the full breakdown.</p>
-
-        <div class="card chartcard">
-          <h3>Risk–return map of all funds</h3>
-          <p class="sub">Each dot is a fund, coloured by its data-driven cohort. The aggressive cohorts should earn more
-            — for more risk.</p>
-          <canvas id="scatter"></canvas>
+        <div class="section-heading">
+          <span class="eyebrow"><span class="asterisk">03</span> How the plan is built</span>
+          <h2>From questionnaire to tested portfolio.</h2>
+          <p class="sub">The same four steps appear on your results page, filled in with your numbers.</p>
         </div>
 
-        <div class="explore-tools">
-          <input id="searchBox" type="search" placeholder="Search fund or house…">
-          <select id="catSel"
-            style="font:inherit;font-size:14px;padding:9px 12px;border-radius:10px;border:1px solid var(--line)"></select>
+        <div class="hiw-grid hiw-grid-four">
+          <div class="hiw-card">
+            <div class="hiw-num">01 · Profile</div>
+            <h3>Answer four questions</h3>
+            <p>Age, investment horizon, monthly SIP and comfort with drawdowns. The answers map
+              to a risk tolerance and a suitability target.</p>
+          </div>
+          <div class="hiw-card">
+            <div class="hiw-num">02 · Score</div>
+            <h3>Rank inside the category</h3>
+            <p>Each metric becomes a category percentile. Missing metrics — usually a 5-year
+              record for a young fund — are dropped rather than filled.</p>
+          </div>
+          <div class="hiw-card">
+            <div class="hiw-num">03 · Optimize</div>
+            <h3>Fit the portfolio</h3>
+            <p>The optimizer picks up to two funds per category and respects position limits,
+              category bands and a risk-based volatility cap.</p>
+          </div>
+          <div class="hiw-card">
+            <div class="hiw-num">04 · Test</div>
+            <h3>Replay and project</h3>
+            <p>The final sleeve is replayed over monthly NAV history against a Nifty 500 proxy,
+              then resampled 2,000 times to show a range of outcomes.</p>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px" id="cohortChips"></div>
 
-        <div class="tablewrap">
-          <table class="data" id="fundTable"></table>
+        <div class="hiw-cta">
+          <a class="btn primary" href="quiz.html" id="ctaSecondary">Build my plan →</a>
         </div>
       </div>
     </section>
 
-    <!-- =========================================================== METHOD -->
-    <section class="section" id="method">
+    <!-- =========================================================== LIMITS -->
+    <section class="section">
       <div class="container">
-        <h2>Method — no black boxes</h2>
-        <p class="sub">Everything above is computed from public data with documented formulas. Here's the full pipeline.
-        </p>
-        <div class="method-grid">
-          <div class="mcard">
-            <div class="step">1 · Risk score</div>
-            <p>Four questionnaire inputs → sub-scores → weighted sum:
-              <code>0.35·horizon + 0.30·appetite + 0.20·age + 0.15·SIP</code>.
-              Horizon is capped by years to retirement. Full breakdown is always displayed above.
-            </p>
-          </div>
-          <div class="mcard">
-            <div class="step">2 · Features</div>
-            <p>NAV history per fund (mfapi.in → AMFI): <code>CAGR 1/3/5Y</code>, <code>annualised σ·√252</code>,
-              <code>Sharpe = (CAGR₃ − 7%) / σ</code>, <code>max drawdown 5Y</code>,
-              <code>% positive rolling monthly windows</code>.
-            </p>
-          </div>
-          <div class="mcard">
-            <div class="step">3 · K-means cohorts</div>
-            <p>Clusters on standardised <code>log volatility</code> (w 2), <code>|max drawdown|</code> (1.5),
-              <code>CAGR₃</code> (0.7), <code>consistency</code> (0.4), k = 5, seeded for reproducibility. Cohorts
-              ordered by mean volatility.
-            </p>
-          </div>
-          <div class="mcard">
-            <div class="step">4 · RandomForest cross-check</div>
-            <p>150 bagged trees (depth ≤ 4) predict the fund's SEBI Riskometer level (1–6) from behaviour. Leave-one-out
-              CV accuracy shown; each fund card displays the model's vote, confidence, and agreement with the official
-              label.</p>
-          </div>
-          <div class="mcard">
-            <div class="step">5 · Weighted ranking</div>
-            <p>Inside your cohort, funds rank by <code>Σ wᵢ·scoreᵢ</code> where sub-scores are winsorised min-max
-              normalisations of the 5 components — and all five weights are yours to adjust live.</p>
-          </div>
-          <div class="mcard">
-            <div class="step">6 · SIP backtest</div>
-            <p>Monthly investments replayed on real NAVs through 1/3/5-year windows — basket vs a Nifty 50 index fund
-              proxy, reporting XIRR (bisection IRR) and max drawdown of the value path.</p>
-          </div>
-        </div>
-
-        <h3 style="margin:30px 0 10px">Data snapshot</h3>
-        <div style="display:flex;gap:12px;flex-wrap:wrap" id="methodStats"></div>
-
-        <h3 style="margin:30px 0 10px">Honest limitations</h3>
-        <div class="card" style="font-size:14px;color:var(--muted)">
-          <ul style="margin:6px 0 0 18px;line-height:1.9">
-            <li><b class="limit">TER & AUM are curated approximations</b> (dated, from public sources) — mfapi.in does
-              not expose them. Replace with AMFI scheme-attributes for production accuracy.</li>
-            <li>The SEBI Riskometer label is reconstructed <b>at category level</b>; each fund's real label can differ
-              and is dynamic.</li>
-            <li>The Nifty 50 benchmark is proxied by <span id="benchName" style="font-weight:600"></span> — an index
-              fund NAV, not the official TRI.</li>
-            <li>72 funds is a curated universe, not the whole market; plans are Direct-Growth only.</li>
-            <li>Past performance analysis is descriptive. Nothing here predicts the future.</li>
-          </ul>
+        <div class="callout">
+          <b>Read this before using the numbers</b>
+          <p>This is research and decision support, not investment advice. The quality score is not a
+            return forecast. Benchmarks are equal-weight index-fund proxies, not official TRI values,
+            and the data carries survivorship bias because only live schemes are listed. Past
+            performance does not predict future returns.</p>
         </div>
       </div>
     </section>
 
     <footer>
       <div class="container">
-        <b>SahiMF</b> — decision support, not decision replacement. It filters, matches, ranks and explains;
-        the final call stays with the investor. Educational use only — not investment advice; not a SEBI-registered
-        research or advisory service. Data: AMFI via api.mfapi.in · NAV series truncated to 13 years · built
-        <span id="builtOn"></span>.
+        <b>SahiMF</b> — filters, matches, ranks and explains; the final call stays with the investor.
+        Educational use only. Data: AMFI via api.mfapi.in. Built <span id="builtOn">—</span>.
       </div>
     </footer>
-
-    <!-- =========================================================== FULL-SCREEN QUIZ VIEW -->
-    <div id="quizView" class="quiz-view" role="dialog" aria-modal="true" aria-label="Investor Profile Quiz">
-      <!-- Top Bar -->
-      <div class="quiz-view-topbar">
-        <div class="brand"><span class="logo">◈</span>SahiMF</div>
-        <div class="quiz-step-info">
-          <span class="quiz-step-badge" id="quizStepBadge">Question 1 of 4</span>
-          <span class="quiz-topic-title" id="quizTopicTitle">Investor Age</span>
-        </div>
-        <div class="quiz-view-actions">
-          <button type="button" class="btn small quiz-sample-pill" id="btnSample">⚡ Sample profile</button>
-          <button type="button" class="btn small quiz-exit-btn" id="btnExitQuiz">✕ Exit to main page</button>
-        </div>
-      </div>
-
-      <!-- Progress Track -->
-      <div class="quiz-view-progress">
-        <div class="quiz-progress-fill" id="quizProgressBar" style="width: 25%"></div>
-      </div>
-
-      <!-- Center Stage: Only current question or analyzing view visible at a time -->
-      <div class="quiz-view-stage">
-        <div class="quiz-view-box">
-
-          <!-- SCREEN 1: AGE -->
-          <div class="quiz-screen active" data-step="1">
-            <div class="quiz-prompt">
-              <span class="quiz-screen-index">01 / 04</span>
-              <h2>What is your current age?</h2>
-              <p class="sub">Younger investors have decades ahead to compound wealth and absorb market drawdowns.</p>
-            </div>
-
-            <div class="quiz-body">
-              <div class="quiz-display-val">
-                <span class="quiz-big-num" id="ageVal">30</span>
-                <span class="quiz-unit-label">years old</span>
-              </div>
-              <div class="quiz-slider-wrap">
-                <input type="range" id="qAge" min="18" max="70" step="1" value="30">
-                <div class="quiz-slider-bounds"><span>18 yrs</span><span>70 yrs</span></div>
-              </div>
-              <div class="quiz-presets" data-for="qAge">
-                <button type="button" class="preset-pill" data-val="22">22 · Starting out</button>
-                <button type="button" class="preset-pill active" data-val="30">30 · Peak accumulation</button>
-                <button type="button" class="preset-pill" data-val="42">42 · Wealth builder</button>
-                <button type="button" class="preset-pill" data-val="55">55 · Pre-retirement</button>
-              </div>
-            </div>
-
-            <div class="quiz-footer">
-              <div class="quiz-nav-left"></div>
-              <div class="quiz-nav-right">
-                <span class="quiz-kbd-hint">Press <kbd class="quiz-kbd">↵ Enter</kbd></span>
-                <button type="button" class="btn primary quiz-btn-next" data-next="2">Continue →</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- SCREEN 2: HORIZON -->
-          <div class="quiz-screen" data-step="2">
-            <div class="quiz-prompt">
-              <span class="quiz-screen-index">02 / 04</span>
-              <h2>What is your investment horizon?</h2>
-              <p class="sub">How long before you realistically expect to withdraw or use this money (1–20 years)?</p>
-            </div>
-
-            <div class="quiz-body">
-              <div class="quiz-display-val">
-                <span class="quiz-big-num" id="horVal">10</span>
-                <span class="quiz-unit-label">years</span>
-              </div>
-              <div class="quiz-slider-wrap">
-                <input type="range" id="qHorizon" min="1" max="20" step="1" value="10">
-                <div class="quiz-slider-bounds"><span>1 yr</span><span>20 yrs</span></div>
-              </div>
-              <div class="quiz-presets" data-for="qHorizon">
-                <button type="button" class="preset-pill" data-val="3">3 yrs · Short-term</button>
-                <button type="button" class="preset-pill" data-val="7">7 yrs · Medium-term</button>
-                <button type="button" class="preset-pill active" data-val="10">10 yrs · Long-term</button>
-                <button type="button" class="preset-pill" data-val="18">18+ yrs · Generational</button>
-              </div>
-              <div class="quiz-inline-hint" id="horizonRetireHint">Horizon is dynamically capped by years left to retirement (65 − age).</div>
-            </div>
-
-            <div class="quiz-footer">
-              <button type="button" class="btn quiz-btn-prev" data-prev="1">← Back</button>
-              <div class="quiz-nav-right">
-                <span class="quiz-kbd-hint">Press <kbd class="quiz-kbd">↵ Enter</kbd></span>
-                <button type="button" class="btn primary quiz-btn-next" data-next="3">Continue →</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- SCREEN 3: MONTHLY SIP -->
-          <div class="quiz-screen" data-step="3">
-            <div class="quiz-prompt">
-              <span class="quiz-screen-index">03 / 04</span>
-              <h2>How much can you invest monthly?</h2>
-              <p class="sub">Disciplined monthly SIPs help you rupee-cost-average smoothly through market cycles.</p>
-            </div>
-
-            <div class="quiz-body">
-              <div class="quiz-display-val">
-                <span class="quiz-big-num" id="sipVal">₹10,000</span>
-                <span class="quiz-unit-label">/ month</span>
-              </div>
-              <div class="quiz-slider-wrap">
-                <input type="range" id="qSip" min="1000" max="100000" step="500" value="10000">
-                <div class="quiz-slider-bounds"><span>₹1,000</span><span>₹1,00,000</span></div>
-              </div>
-              <div class="quiz-presets" data-for="qSip">
-                <button type="button" class="preset-pill" data-val="2500">₹2,500</button>
-                <button type="button" class="preset-pill" data-val="5000">₹5,000</button>
-                <button type="button" class="preset-pill active" data-val="10000">₹10,000</button>
-                <button type="button" class="preset-pill" data-val="25000">₹25,000</button>
-                <button type="button" class="preset-pill" data-val="50000">₹50,000</button>
-              </div>
-            </div>
-
-            <div class="quiz-footer">
-              <button type="button" class="btn quiz-btn-prev" data-prev="2">← Back</button>
-              <div class="quiz-nav-right">
-                <span class="quiz-kbd-hint">Press <kbd class="quiz-kbd">↵ Enter</kbd></span>
-                <button type="button" class="btn primary quiz-btn-next" data-next="4">Continue →</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- SCREEN 4: RISK APPETITE -->
-          <div class="quiz-screen" data-step="4">
-            <div class="quiz-prompt">
-              <span class="quiz-screen-index">04 / 04</span>
-              <h2>How comfortable are you with risk?</h2>
-              <p class="sub">Select the statement that best describes your reaction to temporary market downturns.</p>
-            </div>
-
-            <div class="quiz-body">
-              <div class="quiz-appetite-grid radiocards">
-                <label class="choice-card">
-                  <input type="radio" name="app" value="conservative">
-                  <div class="choice-card-inner">
-                    <div class="choice-header">
-                      <span class="choice-icon">🛡️</span>
-                      <b>Conservative</b>
-                    </div>
-                    <p>Protect capital above all. Low tolerance for drawdown; prioritises stability over returns.</p>
-                  </div>
-                </label>
-                <label class="choice-card">
-                  <input type="radio" name="app" value="balanced" checked>
-                  <div class="choice-card-inner">
-                    <div class="choice-header">
-                      <span class="choice-icon">⚖️</span>
-                      <b>Balanced</b>
-                    </div>
-                    <p>Steady long-term growth. Willing to accept moderate temporary dips to comfortably beat inflation.</p>
-                  </div>
-                </label>
-                <label class="choice-card">
-                  <input type="radio" name="app" value="aggressive">
-                  <div class="choice-card-inner">
-                    <div class="choice-header">
-                      <span class="choice-icon">🚀</span>
-                      <b>Aggressive</b>
-                    </div>
-                    <p>Maximum wealth creation. Ready to hold through deeper corrections for higher potential CAGR.</p>
-                  </div>
-                </label>
-                <label class="choice-card">
-                  <input type="radio" name="app" value="unsure">
-                  <div class="choice-card-inner">
-                    <div class="choice-header">
-                      <span class="choice-icon">🧭</span>
-                      <b>Not sure</b>
-                    </div>
-                    <p>Let SahiMF evaluate the safest allocation automatically based on your age & horizon.</p>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <div class="quiz-footer">
-              <button type="button" class="btn quiz-btn-prev" data-prev="3">← Back</button>
-              <div class="quiz-nav-right">
-                <span class="quiz-kbd-hint">Press <kbd class="quiz-kbd">↵ Enter</kbd></span>
-                <button type="button" class="btn primary quiz-btn-submit" id="btnCompute">Calculate My Risk Score ✦</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- ==================== ANALYZING TRANSITION SCREEN ==================== -->
-          <div id="quizAnalyzing" class="card quiz-analyzing-card" hidden>
-            <div class="analyzing-content">
-              <div class="analyzing-spinner">
-                <span class="asterisk-pulse">✳</span>
-              </div>
-              <h3 id="analyzingTitle">Evaluating your investor profile...</h3>
-              <p class="analyzing-sub" id="analyzingSub">Normalising age, horizon and monthly SIP capacity...</p>
-              <div class="analyzing-steps">
-                <div class="astep done" id="as1"><span>✓</span> Multi-factor risk scoring</div>
-                <div class="astep active" id="as2"><span class="step-icon">◈</span> K-Means fund cohort clustering</div>
-                <div class="astep" id="as3"><span class="step-icon">○</span> RandomForest vs SEBI Riskometer cross-check</div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- =========================================================== MODAL -->
-    <div class="modal-bg" id="modal" role="dialog" aria-modal="true">
-      <div class="modal">
-        <div class="modal-head">
-          <div>
-            <h3 id="mName"></h3>
-            <div class="sub" id="mSub"></div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px" id="mChips"></div>
-          </div>
-          <button class="x" id="mClose">✕</button>
-        </div>
-        <canvas id="mChart"></canvas>
-        <div class="mgrid" id="mMetrics" style="margin-top:14px"></div>
-        <div id="mRf"></div>
-        <div id="mReasons"></div>
-      </div>
-    </div>
 
   </main>
 </body>

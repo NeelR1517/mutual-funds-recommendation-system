@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Investor profile — SahiMF</title>
+  <meta name="description" content="Four quick questions about your age, horizon, monthly SIP and comfort with drawdowns. SahiMF turns them into a suitability target and a fund portfolio.">
+  <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHJlY3Qgd2lkdGg9JzMyJyBoZWlnaHQ9JzMyJyByeD0nOCcgZmlsbD0nIzYzNjZmMScvPjx0ZXh0IHg9JzE2JyB5PScyMycgdGV4dC1hbmNob3I9J21pZGRsZScgZm9udC1mYW1pbHk9J0FyaWFsLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTknIGZvbnQtd2VpZ2h0PSc3MDAnIGZpbGw9JyNmZmZmZmYnPlM8L3RleHQ+PC9zdmc+">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+  <script defer src="core.js"></script>
+  <script defer src="quiz.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body data-page="quiz">
+
+  <div id="quizView" class="quiz-view page-mode" role="main" aria-label="Investor profile quiz">
+
+    <!-- Top bar -->
+    <div class="quiz-view-topbar">
+      <a class="brand" href="index.html"><span class="logo">◈</span>SahiMF</a>
+      <div class="quiz-step-info">
+        <span class="quiz-step-badge" id="quizStepBadge">Question 1 of 4</span>
+        <span class="quiz-topic-title" id="quizTopicTitle">Investor age</span>
+      </div>
+      <div class="quiz-view-actions">
+        <button type="button" class="btn small quiz-sample-pill" id="btnSample">⚡ Sample profile</button>
+        <a class="btn small quiz-exit-btn" href="index.html">✕ Exit</a>
+      </div>
+    </div>
+
+    <div class="quiz-view-progress">
+      <div class="quiz-progress-fill" id="quizProgressBar" style="width: 25%"></div>
+    </div>
+
+    <div class="quiz-view-stage">
+      <div class="quiz-view-box">
+
+        <!-- 1 · AGE -->
+        <section class="quiz-screen active" data-step="1">
+          <div class="quiz-prompt">
+            <span class="quiz-screen-index">01 / 04</span>
+            <h2>What is your current age?</h2>
+            <p class="sub">Age affects how long the money can stay invested. This is one input to the
+              suitability target, not a label for you.</p>
+          </div>
+
+          <div class="quiz-body">
+            <div class="quiz-display-val">
+              <span class="quiz-big-num" id="ageVal">30</span>
+              <span class="quiz-unit-label">years old</span>
+            </div>
+            <div class="quiz-slider-wrap">
+              <input type="range" id="qAge" min="18" max="70" step="1" value="30">
+              <div class="quiz-slider-bounds"><span>18 yrs</span><span>70 yrs</span></div>
+            </div>
+            <div class="quiz-presets" data-for="qAge">
+              <button type="button" class="preset-pill" data-val="22">22 · Starting out</button>
+              <button type="button" class="preset-pill active" data-val="30">30 · Accumulating</button>
+              <button type="button" class="preset-pill" data-val="42">42 · Wealth builder</button>
+              <button type="button" class="preset-pill" data-val="55">55 · Pre-retirement</button>
+            </div>
+          </div>
+
+          <div class="quiz-footer">
+            <div class="quiz-nav-left"></div>
+            <div class="quiz-nav-right">
+              <span class="quiz-kbd-hint">Press <kbd class="quiz-kbd">↵ Enter</kbd></span>
+              <button type="button" class="btn primary quiz-btn-next" data-next="2">Continue →</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2 · HORIZON -->
+        <section class="quiz-screen" data-step="2">
+          <div class="quiz-prompt">
+            <span class="quiz-screen-index">02 / 04</span>
+            <h2>When will you use this money?</h2>
+            <p class="sub">The model caps your effective horizon by years left to retirement, so a
+              short goal cannot be treated as a 20-year investment.</p>
+          </div>
+
+          <div class="quiz-body">
+            <div class="quiz-display-val">
+              <span class="quiz-big-num" id="horVal">15</span>
+              <span class="quiz-unit-label">years</span>
+            </div>
+            <div class="quiz-slider-wrap">
+              <input type="range" id="qHorizon" min="1" max="20" step="1" value="15">
+              <div class="quiz-slider-bounds"><span>1 yr</span><span>20 yrs</span></div>
+            </div>
+            <div class="quiz-presets" data-for="qHorizon">
+              <button type="button" class="preset-pill" data-val="3">3 yrs · Short-term</button>
+              <button type="button" class="preset-pill" data-val="7">7 yrs · Medium-term</button>
+              <button type="button" class="preset-pill active" data-val="15">15 yrs · Long-term</button>
+              <button type="button" class="preset-pill" data-val="20">20 yrs · Generational</button>
+            </div>
+            <div class="quiz-inline-hint" id="horizonRetireHint">
+              Horizon is capped by years left to retirement (65 − age).
+            </div>
+          </div>
+
+          <div class="quiz-footer">
+            <button type="button" class="btn quiz-btn-prev" data-prev="1">← Back</button>
+            <div class="quiz-nav-right">
+              <span class="quiz-kbd-hint">Press <kbd class="quiz-kbd">↵ Enter</kbd></span>
+              <button type="button" class="btn primary quiz-btn-next" data-next="3">Continue →</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3 · SIP -->
+        <section class="quiz-screen" data-step="3">
+          <div class="quiz-prompt">
+            <span class="quiz-screen-index">03 / 04</span>
+            <h2>How much can you invest monthly?</h2>
+            <p class="sub">The monthly amount sizes the plan and its projected range. It does not
+              change the quality score of a fund.</p>
+          </div>
+
+          <div class="quiz-body">
+            <div class="quiz-display-val">
+              <span class="quiz-big-num" id="sipVal">₹10,000</span>
+              <span class="quiz-unit-label">/ month</span>
+            </div>
+            <div class="quiz-slider-wrap">
+              <input type="range" id="qSip" min="1000" max="100000" step="500" value="10000">
+              <div class="quiz-slider-bounds"><span>₹1,000</span><span>₹1,00,000</span></div>
+            </div>
+            <div class="quiz-presets" data-for="qSip">
+              <button type="button" class="preset-pill" data-val="2500">₹2,500</button>
+              <button type="button" class="preset-pill" data-val="5000">₹5,000</button>
+              <button type="button" class="preset-pill active" data-val="10000">₹10,000</button>
+              <button type="button" class="preset-pill" data-val="25000">₹25,000</button>
+              <button type="button" class="preset-pill" data-val="50000">₹50,000</button>
+            </div>
+          </div>
+
+          <div class="quiz-footer">
+            <button type="button" class="btn quiz-btn-prev" data-prev="2">← Back</button>
+            <div class="quiz-nav-right">
+              <span class="quiz-kbd-hint">Press <kbd class="quiz-kbd">↵ Enter</kbd></span>
+              <button type="button" class="btn primary quiz-btn-next" data-next="4">Continue →</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4 · RISK -->
+        <section class="quiz-screen" data-step="4">
+          <div class="quiz-prompt">
+            <span class="quiz-screen-index">04 / 04</span>
+            <h2>How do you react to a market fall?</h2>
+            <p class="sub">Choose the statement that feels true after a 20% drop, not just in a
+              calm market. This sets your risk tolerance.</p>
+          </div>
+
+          <div class="quiz-body">
+            <div class="quiz-appetite-grid radiocards">
+              <label class="choice-card">
+                <input type="radio" name="app" value="conservative">
+                <div class="choice-card-inner">
+                  <div class="choice-header">
+                    <span class="choice-icon">🛡️</span>
+                    <b>Conservative</b>
+                  </div>
+                  <p>Protect capital first. I would struggle to hold through a deep fall and
+                    prefer a lower equity allocation.</p>
+                </div>
+              </label>
+              <label class="choice-card">
+                <input type="radio" name="app" value="balanced" checked>
+                <div class="choice-card-inner">
+                  <div class="choice-header">
+                    <span class="choice-icon">⚖️</span>
+                    <b>Balanced</b>
+                  </div>
+                  <p>Steady long-term growth. I can accept moderate temporary dips to beat
+                    inflation over time.</p>
+                </div>
+              </label>
+              <label class="choice-card">
+                <input type="radio" name="app" value="aggressive">
+                <div class="choice-card-inner">
+                  <div class="choice-header">
+                    <span class="choice-icon">🚀</span>
+                    <b>Aggressive</b>
+                  </div>
+                  <p>Maximum long-term growth. I can hold through deep corrections without
+                    selling at the bottom.</p>
+                </div>
+              </label>
+              <label class="choice-card">
+                <input type="radio" name="app" value="unsure">
+                <div class="choice-card-inner">
+                  <div class="choice-header">
+                    <span class="choice-icon">🧭</span>
+                    <b>Not sure</b>
+                  </div>
+                  <p>Use a middle-of-the-road setting and let age, horizon and SIP capacity
+                    lead the recommendation.</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="quiz-footer">
+            <button type="button" class="btn quiz-btn-prev" data-prev="3">← Back</button>
+            <div class="quiz-nav-right">
+              <span class="quiz-kbd-hint">Press <kbd class="quiz-kbd">↵ Enter</kbd></span>
+              <button type="button" class="btn primary quiz-btn-submit" id="btnCompute">Build my plan ✦</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ANALYZING -->
+        <div id="quizAnalyzing" class="card quiz-analyzing-card" hidden>
+          <div class="analyzing-content">
+            <div class="analyzing-spinner">
+              <span class="asterisk-pulse">✳</span>
+            </div>
+            <h3 id="analyzingTitle">Sending your profile to the model…</h3>
+            <p class="analyzing-sub" id="analyzingSub">Age, horizon and SIP capacity set the suitability target.</p>
+            <div class="analyzing-steps">
+              <div class="astep active" id="as1"><span class="step-icon">◈</span> Building the suitability target</div>
+              <div class="astep" id="as2"><span class="step-icon">○</span> Scoring and shortlisting funds</div>
+              <div class="astep" id="as3"><span class="step-icon">○</span> Optimizing weights and testing the plan</div>
+            </div>
+            <div id="quizError" class="callout bad" hidden></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

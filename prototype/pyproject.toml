@@ -1,0 +1,28 @@
+[project]
+name = "mflyzer"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "hsrkl", email = "hrishikesh_l@outlook.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "jupyterlab>=4.6.4",
+    "numpy>=2.5.4",
+    "pandas>=3.0.6",
+    "plotly>=7.1.0",
+    "pyarrow>=26.0.0",
+    "requests>=2.34.2",
+    "scikit-learn>=1.9.1",
+    "scipy>=1.18.1",
+    "streamlit>=1.66.1",
+    "yfinance>=1.7.0",
+]
+
+[project.scripts]
+mflyzer = "mflyzer:main"
+
+[build-system]
+requires = ["uv_build>=0.13.1,<0.14.0"]
+build-backend = "uv_build"

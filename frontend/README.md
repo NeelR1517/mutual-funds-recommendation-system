@@ -1,95 +1,64 @@
-# SahiMF — Investor-Profile-Aware Fund Selector (India)
+# SahiMF frontend
 
-Mutual fund selection in India still runs on static star ratings and tip lists — those
-describe the *fund*, not the *investor*. FundLens recommends Indian mutual funds based on
-**who you are**, and shows its reasoning for every pick.
+> **The project README has moved to [`../README.md`](../README.md).**
+> It covers the whole engine — universe screening, category-relative scoring, the ML gate,
+> the suitability policy, the constrained optimiser, the backtest and Monte Carlo — plus the
+> backend, this frontend and the Streamlit prototype.
 
-**Scope: decision support, not decision replacement.** It filters, matches, ranks and
-explains; the final call stays with the investor. Not investment advice.
+This folder is the zero-dependency UI for the FastAPI recommender. The backend serves these
+files at `http://localhost:8000/`, so the pages and API share an origin.
 
----
+Not investment advice.
 
-## Run it
-
-Requires **Node.js ≥ 18** (uses only built-in modules, zero npm installs).
-
-```bash
-node scripts/serve.mjs     # → open http://localhost:8788
-```
-
-To rebuild the dataset (fetches fresh NAV history from mfapi.in, re-runs the ML):
+## Run
 
 ```bash
-node scripts/build-data.mjs
+cd backend
+source .venv/bin/activate
+uvicorn app.main:app --reload --port 8000
 ```
 
-Responses are cached in the OS temp dir (`%TEMP%/opencode/mf-cache`) so rebuilds are fast;
-delete that folder to force a full refresh. The whole rebuild takes a few minutes.
+Open `http://localhost:8000/`. API docs live at `/docs`.
 
-## What it does (the 4 steps)
+For frontend-only edits you can also run `node scripts/serve.mjs` on port 8788. The client
+then calls `http://localhost:8000`; override it with `window.SAHIMF_API_BASE`.
 
-1. **Questionnaire → transparent risk score (0–100).**
-   `0.35·horizon + 0.30·appetite + 0.20·age + 0.15·SIP`, each factor normalised 0–100 and
-   displayed with its contribution. Horizon is capped by years to retirement.
+## Pages
 
-2. **Real fund data → risk–return features.**
-   NAV histories for **72 Direct–Growth plans** (Large/Flexi/Mid/Small Cap, ELSS,
-   Nifty-50 & Next-50 index, Aggressive Hybrid, BAF, Conservative Hybrid, Gilt, Short
-   Duration, Money Market, Liquid) from `api.mfapi.in` (AMFI data). Features: CAGR 1/3/5Y,
-   annualised volatility, Sharpe (7% risk-free), max drawdown 5Y, monthly-window win rate.
+- **`index.html`** — live dataset overview: fund counts, categories, pipeline and limits.
+- **`quiz.html`** — four inputs (age, horizon, monthly SIP, risk appetite), then
+  `POST /recommend` and a redirect to the results.
+- **`results.html`** — seven sections: plan overview, allocation, performance, Monte Carlo,
+  score basis, fund universe, and method.
 
-3. **Simple, honest ML.**
-   - **K-means (k=5)** on standardised `log(vol) · |maxDD| · CAGR₃ · consistency`
-     (weights 2 / 1.5 / 0.7 / 0.4) → five data-driven risk cohorts.
-   - **RandomForest** (150 bagged trees) predicts each fund's SEBI Riskometer level (1–6)
-     from behaviour; leave-one-out CV accuracy (~81%) and the confusion matrix are shown.
-     Every fund card displays the model's vote vs the official label — agreement ✓ or
-     divergence ≠.
+Shared client code lives in `core.js` (API calls, formatting, category labels, storage,
+toasts). Page logic lives in `home.js`, `quiz.js` and `results.js`; `charts.js` draws the
+line, scatter and percentile-band charts on canvas.
 
-4. **You → cohort → ranked top-5 + reasons.**
-   Your score maps to the nearest cohort (overridable). Inside it, funds rank by
-   adjustable weights — **return quality 40% · consistency 20% · drawdown 20% · cost 10% ·
-   size 10%** — five live sliders + presets. Top-5 cards carry plain-language reasons
-   generated from the winning sub-scores.
+The latest profile is cached in `localStorage` (`sahimf.profile`) and the matching
+recommendation in `sessionStorage` (`sahimf.recommendation`), so the results page survives a
+refresh but never shows a stale plan for a new profile. Use **Start over** to clear them.
 
-5. **SIP backtest (proof it works).**
-   The top-5 basket at equal split, replayed over real NAVs (monthly SIP, first NAV ≥ 5th
-   of month) against a Nifty 50 index-fund proxy over 1/3/5 years — final values, XIRR
-   (bisection IRR) and max drawdown of the value path.
+## Data flow
 
-## Data snapshot
+All numbers come from the backend: `/meta`, `/overview`, `/funds`,
+`/funds/{code}/score`, `/funds/{code}/nav` and `/recommend`. There is no generated dataset
+and no build step.
 
-- Universe: 72 funds · ~41,000 weekly NAV points · last 13 years per fund
-- Every entry carries official Riskometer level (category-typical), TER, AUM,
-  RFC features, cluster id, RF probabilities
-
-## Honest limitations (also shown on the site's Method page)
-
-- **TER & AUM are curated approximations** — mfapi.in/AMFI does not expose them.
-  Replace with AMFI's scheme-attributes file for production accuracy.
-- The SEBI Riskometer label is reconstructed at **category level**; real labels are
-  fund-specific and dynamic.
-- The Nifty 50 benchmark is proxied by **UTI Nifty 50 Index Fund (Direct)** NAV — not the
-  official TRI.
-- Curated universe (72 funds), Direct-Growth plans only.
-- Everything is descriptive of the past; nothing predicts the future.
-
-## Project layout
+## Files
 
 ```
-index.html              page markup
-styles.css              design system
-app.js                  scoring, ranking, backtest, explore logic
-charts.js               dependency-free canvas line/scatter charts
-data/funds-data.js      generated dataset (window.FUNDS_DATA)
-data/funds-data.json    same dataset as plain JSON
-scripts/build-data.mjs  full pipeline: fetch → features → K-means → RF → export
-scripts/serve.mjs       tiny static server (localhost:8788)
-scripts/find-schemes.mjs helper to look up mfapi scheme codes
+index.html / home.js       overview page
+quiz.html / quiz.js        investor profile form
+results.html / results.js  recommendation dashboard
+core.js                    shared API client and helpers
+charts.js                  canvas line, scatter and band charts
+styles.css                 design system
+scripts/serve.mjs          optional static dev server (port 8788)
+scripts/build-data.mjs     legacy data pipeline (K-means + RandomForest) — reference only
+scripts/test-kmeans.mjs    clustering experiment harness — reference only
+scripts/find-schemes.mjs   look up scheme codes by name pattern
 ```
 
-## Credits & data
-
-- NAV data: AMFI via [api.mfapi.in](https://mfapi.in) (free, public).
-- SEBI Riskometer levels reconstructed from SEBI's product-labelling framework (course of
-  2020 onward) at the scheme-category level.
+The old `app.js` and `data/` files are kept for reference only; the live pages do not use
+them.
