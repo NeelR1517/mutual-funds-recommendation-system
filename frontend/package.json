@@ -1,0 +1,16 @@
+{
+  "name": "sahimf",
+  "version": "1.0.0",
+  "description": "Investor-profile-aware mutual fund selector for India — transparent risk scoring, K-means cohorts, RandomForest vs SEBI Riskometer cross-check, SIP backtest vs Nifty 50.",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "serve": "node scripts/serve.mjs",
+    "build": "node scripts/build-data.mjs",
+    "build:fresh": "node -e \"fs.rmdirSync(path.join(os.tmpdir(),'opencode','mf-cache'),{recursive:true},{e:1})\" ; node scripts/build-data.mjs",
+    "find-schemes": "node scripts/find-schemes.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
