@@ -25,9 +25,11 @@
   // ------------------------------------------------------------- API
   // When the backend serves the UI these are same-origin requests.
   // The small static dev server runs on 8788, so it points at port 8000.
-  const API_BASE =
-    window.SAHIMF_API_BASE ||
-    (window.location.port === '8788' ? 'http://localhost:8000' : '');
+const API_BASE =
+  window.SAHIMF_API_BASE ||
+  (window.location.port === '8788'
+    ? 'http://localhost:8000'
+    : 'https://mutual-funds-recommendation-system.onrender.com');
 
   async function request(path, options = {}) {
     let response;
