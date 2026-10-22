@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import re
-from concurrent.futures import ThreadPoolExecutor
+import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pandas as pd
 
 from ..config import MIN_OBS, MIN_YEARS
 from .mfapi import fetch_scheme
+
+logger = logging.getLogger(__name__)
 
 BROAD_INDEX = r"nifty\s*(50\b|100\b|next\s*50|500)|sensex|bse\s*(500|sensex)|midcap\s*150|smallcap\s*250|nifty\s*(large|mid|small)\s*cap|total\s*market"
 SECTOR_INDEX = r"bank\b|it\b|pharma|auto\b|fmcg|consumption|infra|manufactur|energy|psu|defence|healthcare|tech|metal|realty|esg|momentum|quality|value|dividend|low\s*vol|alpha|equal\s*weight|sector|thematic|housing|insurance|financial|services"
@@ -101,10 +104,22 @@ def _nav_frame(code: int) -> pd.DataFrame | None:
 
 def load_navs(codes: list[int]) -> pd.DataFrame:
     frames = []
-    for code in codes:
-        frame = _nav_frame(code)
-        if frame is not None:
-            frames.append(frame)
+    total = len(codes)
+    completed = 0
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = [pool.submit(_nav_frame, code) for code in codes]
+        for future in as_completed(futures):
+            frame = future.result()
+            completed += 1
+            if frame is not None:
+                frames.append(frame)
+            if completed % 100 == 0 or completed == total:
+                logger.info(
+                    "Loaded NAV history for %s/%s schemes (%s succeeded)",
+                    completed,
+                    total,
+                    len(frames),
+                )
 
     if not frames:
         raise RuntimeError("No NAV data could be loaded.")
