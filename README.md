@@ -1,4 +1,4 @@
-# SahiMF · *mflyzer*
+# SahiMF
 
 > **A mutual-fund engine that treats fund quality and investor fit as two separate problems.**
 > Screen ~5,000 Indian schemes → score each one *inside its own category* → size the equity
