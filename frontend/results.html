@@ -5,11 +5,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Your plan — SahiMF</title>
-  <meta name="description" content="Your suitability target, optimized fund allocation, historical performance, Monte Carlo range, score basis and the full fund universe.">
-  <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHJlY3Qgd2lkdGg9JzMyJyBoZWlnaHQ9JzMyJyByeD0nOCcgZmlsbD0nIzYzNjZmMScvPjx0ZXh0IHg9JzE2JyB5PScyMycgdGV4dC1hbmNob3I9J21pZGRsZScgZm9udC1mYW1pbHk9J0FyaWFsLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTknIGZvbnQtd2VpZ2h0PSc3MDAnIGZpbGw9JyNmZmZmZmYnPlM8L3RleHQ+PC9zdmc+">
+  <link rel="icon"
+    href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHJlY3Qgd2lkdGg9JzMyJyBoZWlnaHQ9JzMyJyByeD0nOCcgZmlsbD0nIzYzNjZmMScvPjx0ZXh0IHg9JzE2JyB5PScyMycgdGV4dC1hbmNob3I9J21pZGRsZScgZm9udC1mYW1pbHk9J0FyaWFsLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTknIGZvbnQtd2VpZ2h0PSc3MDAnIGZpbGw9JyNmZmZmZmYnPlM8L3RleHQ+PC9zdmc+">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap"
+    rel="stylesheet">
   <script defer src="charts.js"></script>
   <script defer src="core.js"></script>
   <script defer src="results.js"></script>
@@ -26,7 +28,10 @@
         <a href="quiz.html" data-nav="quiz">Take the quiz</a>
         <a href="results.html" data-nav="results">My results</a>
       </nav>
-      <span class="scope-chip"><span class="scope-dot"></span>Decision support · not advice</span>
+      <div class="topbar-actions">
+        <span class="status-dot ok nav-status-dot" id="navStatusDot" title="API connected" tabindex="0" role="status"
+          aria-label="API status"></span>
+      </div>
     </div>
   </header>
 
@@ -37,8 +42,6 @@
         <header class="page-head reveal" style="--d:.05s">
           <span class="eyebrow"><span class="asterisk">✳</span> Your personalised dashboard</span>
           <h1>Your <em>plan</em>, with the evidence.</h1>
-          <p class="lede">A suitability target, optimized fund weights, a five-year replay and a range
-            of projected outcomes. Open any fund to see its NAV and score breakdown.</p>
         </header>
 
         <div id="loadingCard" class="card state-card">
@@ -54,7 +57,7 @@
             The backend does the rest.</p>
           <div class="launch-actions">
             <a class="btn primary" href="quiz.html">Take the quiz →</a>
-            <button type="button" class="btn" id="btnGateSample">⚡ Load a sample profile</button>
+            <button type="button" class="btn btn-ghost" id="btnGateSample">⚡ Load a sample profile</button>
           </div>
         </div>
 
@@ -69,7 +72,7 @@
                 <span class="sum-dot">·</span>
                 <span class="sum-item"><b>Horizon</b> <span id="sumHorizon">—</span> yrs</span>
                 <span class="sum-dot">·</span>
-                <span class="sum-item"><b>SIP</b> <span id="sumSip">—</span>/mo</span>
+                <span class="sum-item"><b id="sumAmountLabel">Deposit</b> <span id="sumAmount">—</span></span>
                 <span class="sum-dot">·</span>
                 <span class="sum-item"><b>Risk</b> <span id="sumRisk" class="sum-app-val">—</span></span>
               </div>
@@ -93,9 +96,6 @@
             <div class="section-heading">
               <span class="eyebrow"><span class="asterisk">01</span> Plan at a glance</span>
               <h2>What the model decided — and why.</h2>
-              <p class="sub">Your answers set the equity share. The score ranks funds inside their
-                category. The optimizer turns that shortlist into weights. The debt / cash gap is
-                left explicit because this data covers equity funds only.</p>
             </div>
 
             <div id="planKpis" class="kpi-grid"></div>
@@ -119,8 +119,6 @@
                   respecting position and volatility limits.</p>
               </div>
             </div>
-
-            <div id="warningPanel"></div>
           </section>
 
           <!-- 02 · ALLOCATION -->
@@ -128,8 +126,8 @@
             <div class="section-heading">
               <span class="eyebrow"><span class="asterisk">02</span> Recommended allocation</span>
               <h2>Where the equity sleeve goes.</h2>
-              <p class="sub">Weights are shares of the equity sleeve. Amounts apply the same weights to
-                your monthly plan. Click any fund for its NAV and score details.</p>
+              <p class="sub">Weights are shares of the equity sleeve. Amounts reflect your one-time deposit. Click any
+                fund for its NAV and score details.</p>
             </div>
 
             <div class="grid2">
@@ -203,7 +201,7 @@
               <span class="eyebrow"><span class="asterisk">04</span> Monte Carlo projection</span>
               <h2>A range of outcomes, not a forecast.</h2>
               <p class="sub">The simulation resamples the portfolio’s recent monthly returns and
-                applies your SIP plan. The spread shows how much the ending value depends on the
+                applies your deposit plan. The spread shows how much the ending value depends on the
                 order of returns.</p>
             </div>
 
@@ -315,30 +313,12 @@
 
             <div id="methodGrid" class="method-grid"></div>
 
-            <div class="grid2">
-              <div class="card">
-                <div class="card-head">
-                  <h3>Settings used for this run</h3>
-                  <span class="chip">From /meta</span>
-                </div>
-                <table class="settings-table" id="settingsTable"></table>
+            <div class="card">
+              <div class="card-head">
+                <h3>Settings used for this run</h3>
+                <span class="chip">From /meta</span>
               </div>
-              <div class="card">
-                <div class="card-head">
-                  <h3>What the data does not contain</h3>
-                  <span class="chip warn">Read me</span>
-                </div>
-                <ul class="limit-list">
-                  <li><b>No AUM, expense ratio, manager or holdings.</b> mfapi.in does not publish
-                    them, so the score cannot judge size, cost or style drift.</li>
-                  <li><b>No official index TRI.</b> Benchmarks are equal-weight composites of index
-                    funds with tracking error and expenses.</li>
-                  <li><b>Survivorship bias.</b> Only live schemes appear in the feed.</li>
-                  <li><b>Inferred categories.</b> Labels come from fund names and category text.</li>
-                  <li><b>Past returns do not persist.</b> A high score is evidence about the past,
-                    not a promise about the future.</li>
-                </ul>
-              </div>
+              <table class="settings-table" id="settingsTable"></table>
             </div>
 
             <div id="methodStats" class="stat-row"></div>
@@ -350,10 +330,11 @@
     </section>
 
     <footer>
-      <div class="container">
-        <b>SahiMF</b> — filters, matches, ranks and explains; the final call stays with the investor.
-        Educational use only — not investment advice. Data: AMFI via api.mfapi.in. Built
-        <span id="builtOn">—</span>.
+      <div class="container footer-content">
+        <p class="footer-disclaimer">Decision support · not advice. SahiMF filters, matches, ranks and explains; the
+          final call stays with the investor. Educational use only — not investment advice. Past performance does not
+          predict future returns.</p>
+        <p class="footer-meta">Data as of <span id="builtOn">—</span> · AMFI via mfapi.in</p>
       </div>
     </footer>
 

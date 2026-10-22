@@ -16,7 +16,7 @@
     $('#loadingCard').hidden = true;
     $('#resultsGate').hidden = false;
     $('#btnGateSample').onclick = () => {
-      M.saveProfile({ age: 52, horizon: 3, sip: 25000, appetite: 'conservative' });
+      M.saveProfile({ age: 52, horizon: 3, mode: 'lumpsum', amount: 250000, appetite: 'conservative' });
       window.location.reload();
     };
     return;
@@ -118,10 +118,18 @@
   function renderSummary() {
     const rec = state.recommendation;
     const appetite = M.APPETITES[profile.appetite] || M.APPETITES.balanced;
+    const isSip = rec.inputs.mode === 'sip';
 
     $('#sumAge').textContent = profile.age;
     $('#sumHorizon').textContent = profile.horizon;
-    $('#sumSip').textContent = M.inr(profile.sip);
+    const amountLabel = $('#sumAmountLabel');
+    if (amountLabel) {
+      amountLabel.textContent = isSip ? 'Monthly SIP' : 'Deposit';
+    }
+    const amountEl = $('#sumAmount') || $('#sumSip');
+    if (amountEl) {
+      amountEl.textContent = `${M.inr(profile.amount || rec.inputs.amount)}${isSip ? '/mo' : ''}`;
+    }
     $('#sumRisk').textContent = `${appetite.label} · ${rec.inputs.risk_tolerance}/5`;
     $('#builtOn').textContent = M.dateLabel(state.overview.built_at);
   }
@@ -130,14 +138,19 @@
   function renderOverview() {
     const rec = state.recommendation;
     const stats = state.overview.stats || {};
+    const isSip = rec.inputs.mode === 'sip';
     const equity = rec.equity_target;
     const equityAmount = (rec.inputs.amount * equity) / 100;
     const profileName = M.planLabel(equity);
 
     $('#planKpis').innerHTML = [
       kpi('Equity target', M.pct(equity / 100), `${profileName} suitability profile`, 'accent'),
-      kpi('Debt / cash gap', M.pct(rec.debt_gap / 100), 'Outside this equity universe'),
-      kpi('Monthly equity plan', M.inr(equityAmount), `${M.pct(equity / 100)} of ${M.inr(rec.inputs.amount)} SIP`),
+      kpi('Debt / cash gap', M.pct(rec.debt_gap / 100), isSip ? 'Monthly gap outside equity' : 'Outside this equity universe'),
+      kpi(
+        isSip ? 'Monthly equity plan' : 'Equity allocation',
+        `${M.inr(equityAmount)}${isSip ? '/mo' : ''}`,
+        `${M.pct(equity / 100)} of ${M.inr(rec.inputs.amount)}${isSip ? '/mo SIP' : ' deposit'}`
+      ),
       kpi('Funds selected', rec.allocations.length, `${stats.selected || 0} funds in the quality pool`),
       kpi('Weighted quality score', M.scoreText(weightedQuality()), 'Average score, weighted by allocation'),
       kpi('5-year portfolio CAGR', M.pct(rec.backtest.portfolio.cagr), 'Historical replay, not a forecast'),
@@ -174,9 +187,9 @@
           ${(rec.projection.months / 12).toFixed(0)} years forward.</span>
       </li>`;
 
-    $('#pipelineNote').textContent =
-      `Debt / cash gap: ${M.inr(rec.inputs.amount * rec.debt_gap / 100)} per month. ` +
-      'It is not a recommendation to hold cash; it is the part this equity data cannot fill.';
+    $('#pipelineNote').textContent = isSip
+      ? `Debt / cash gap: ${M.inr(rec.inputs.amount * rec.debt_gap / 100)}/mo (${rec.debt_gap}%). It is not a recommendation to hold cash; it is the part this equity data cannot fill.`
+      : `Debt / cash gap: ${M.inr(rec.inputs.amount * rec.debt_gap / 100)} (${rec.debt_gap}%). It is not a recommendation to hold cash; it is the part this equity data cannot fill.`;
 
     const mix = actualCategoryMix();
     const maxValue = Math.max(
@@ -205,34 +218,23 @@
           </div>`;
       })
       .join('');
-
-    renderWarnings();
-  }
-
-  function renderWarnings() {
-    const rec = state.recommendation;
-    const panel = $('#warningPanel');
-
-    if (rec.warnings?.length) {
-      panel.innerHTML = `
-        <div class="callout warn">
-          <b>Suitability notes for this run</b>
-          <ul>${rec.warnings.map((warning) => `<li>${M.esc(warning)}</li>`).join('')}</ul>
-          <p class="note">These are warnings, not defects. The plan still follows your inputs.</p>
-        </div>`;
-    } else {
-      panel.innerHTML = `
-        <div class="callout ok">
-          <b>No suitability warnings were raised</b>
-          <p>The allocation stayed inside the model’s category, position and volatility limits.</p>
-        </div>`;
-    }
   }
 
   // ---------------------------------------------------------------- allocation
   function renderAllocation() {
     const rec = state.recommendation;
-    const allocations = [...rec.allocations].sort((a, b) => b.weight - a.weight);
+    const isSip = rec.inputs.mode === 'sip';
+    const totalAmount = rec.inputs.amount || (isSip ? 10000 : 100000);
+    const rawAllocations = [...rec.allocations].sort((a, b) => b.weight - a.weight);
+
+    // Compute rupee amount per fund, respecting backend amount if present and ensuring sum matches equity amount
+    let sumFundAmt = 0;
+    const allocations = rawAllocations.map((fund, idx) => {
+      let fundAmt = fund.amount != null ? Math.round(fund.amount) : Math.round(fund.weight * totalAmount);
+      sumFundAmt += fundAmt;
+      return { ...fund, amount: fundAmt };
+    });
+
     const maxWeight = Math.max(...allocations.map((fund) => fund.weight), 0.01);
 
     $('#allocationCount').textContent = `${allocations.length} funds · ${M.pct(rec.equity_target / 100)} equity`;
@@ -246,7 +248,7 @@
         <span class="weight-track">
           <i style="width:${(fund.weight / maxWeight) * 100}%"></i>
         </span>
-        <b>${M.pct(fund.weight)}</b>
+        <b>${M.pct(fund.weight)} · ${M.inr(fund.amount)}${isSip ? '/month' : ''}</b>
       </button>`).join('');
 
     $$('#weightList .weight-row').forEach((row) => {
@@ -262,7 +264,7 @@
         <div class="bucket-row">
           <div class="bucket-head">
             <span>${label}</span>
-            <b>${M.pct(bucket.share / 100)} · ${M.inr(bucket.amount)}</b>
+            <b>${M.pct(bucket.share / 100)} · ${M.inr(bucket.amount)}${isSip ? '/mo' : ''}</b>
           </div>
           <div class="bucket-track">
             <i class="${tone}" style="width:${bucket.share}%"></i>
@@ -272,10 +274,13 @@
 
     const equityBucket = buckets.find((bucket) => bucket.bucket === 'Equity funds');
     const gapBucket = buckets.find((bucket) => bucket.bucket !== 'Equity funds');
-    $('#bucketNote').textContent =
-      `${M.inr(equityBucket?.amount || 0)} goes into equity funds each month; ` +
-      `${M.inr(gapBucket?.amount || 0)} is the explicit debt / cash gap. ` +
-      'The gap is outside the fund universe and is not an instruction to hold cash.';
+    $('#bucketNote').textContent = isSip
+      ? `${M.inr(equityBucket?.amount || 0)} allocated to equity funds each month; ` +
+        `${M.inr(gapBucket?.amount || 0)} is the monthly debt / cash gap. ` +
+        'The gap is outside the fund universe and is not an instruction to hold cash.'
+      : `${M.inr(equityBucket?.amount || 0)} allocated to equity funds; ` +
+        `${M.inr(gapBucket?.amount || 0)} is the explicit debt / cash gap. ` +
+        'The gap is outside the fund universe and is not an instruction to hold cash.';
 
     $('#allocationTable').innerHTML = `
       <thead>
@@ -283,31 +288,67 @@
           <th class="left">Fund</th>
           <th class="left">Category</th>
           <th>Weight</th>
-          <th>Amount</th>
+          <th>Amount${isSip ? ' /month' : ''}</th>
           <th>Score</th>
           <th>3Y CAGR</th>
-          <th>Sharpe</th>
-          <th>Max DD</th>
-          <th class="left">Why it is here</th>
+          <th>Details</th>
         </tr>
       </thead>
       <tbody>
         ${allocations.map((fund) => `
-          <tr data-code="${fund.code}">
-            <td class="left fname"><b>${M.esc(M.shortName(fund.name))}</b><span>${M.esc(fund.amc)}</span></td>
+          <tr class="fund-summary-row" data-code="${fund.code}">
+            <td class="left fname">
+              <button class="fund-name-btn" type="button" data-modal="${fund.code}">
+                <b>${M.esc(M.shortName(fund.name))}</b>
+                <span>${M.esc(fund.amc)}</span>
+              </button>
+            </td>
             <td class="left">${categoryChip(fund.category)}</td>
-            <td>${M.pct(fund.weight)}</td>
-            <td>${M.inr(fund.amount)}${rec.inputs.mode === 'sip' ? '<span class="unit">/mo</span>' : ''}</td>
+            <td><b>${M.pct(fund.weight)}</b></td>
+            <td><b class="num-accent">${M.inr(fund.amount)}${isSip ? '<span class="unit">/mo</span>' : ''}</b></td>
             <td><span class="score-text">${M.scoreText(fund.score)}</span></td>
             <td>${M.pct(fund.cagr_3y)}</td>
-            <td>${M.scoreText(fund.sharpe_3y, 2)}</td>
-            <td>${M.pct(fund.max_drawdown)}</td>
-            <td class="left why-cell">${M.esc(M.fundReason(fund, state.funds))}</td>
+            <td>
+              <button class="btn tiny toggle-detail-btn" type="button" data-target="detail-${fund.code}" aria-expanded="false">
+                Why this? ▾
+              </button>
+            </td>
+          </tr>
+          <tr class="fund-detail-row" id="detail-${fund.code}" hidden>
+            <td colspan="7">
+              <div class="fund-detail-panel">
+                <div class="fund-reason-block">
+                  <span class="detail-label">Why it was chosen:</span>
+                  <p class="detail-text">${M.esc(M.fundReason(fund, state.funds))}</p>
+                </div>
+                <div class="fund-detail-stats">
+                  <div class="mini-stat"><span>Sharpe (3Y)</span><b>${M.scoreText(fund.sharpe_3y, 2)}</b></div>
+                  <div class="mini-stat"><span>Max Drawdown</span><b>${M.pct(fund.max_drawdown)}</b></div>
+                  <div class="mini-stat"><span>Category Rank</span><b>${fund.rank ? '#' + fund.rank : '—'}</b></div>
+                  <button class="btn tiny secondary" type="button" data-modal="${fund.code}">Inspect NAV & score →</button>
+                </div>
+              </div>
+            </td>
           </tr>`).join('')}
       </tbody>`;
 
-    $$('#allocationTable tr[data-code]').forEach((row) => {
-      row.onclick = () => openFundModal(Number(row.dataset.code));
+    $$('#allocationTable button[data-modal]').forEach((btn) => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        openFundModal(Number(btn.dataset.modal));
+      };
+    });
+
+    $$('#allocationTable .toggle-detail-btn').forEach((btn) => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const targetRow = $(`#${btn.dataset.target}`);
+        if (!targetRow) return;
+        const isHidden = targetRow.hidden;
+        targetRow.hidden = !isHidden;
+        btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+        btn.innerHTML = isHidden ? 'Why this? ▴' : 'Why this? ▾';
+      };
     });
   }
 
@@ -403,22 +444,24 @@
 
   // ---------------------------------------------------------------- projection
   function renderProjection() {
-    const projection = state.recommendation.projection;
+    const rec = state.recommendation;
+    const projection = rec.projection;
+    const isSip = rec.inputs.mode === 'sip';
 
     $('#projectionKpis').innerHTML = [
-      kpi('Total invested', M.inr(projection.invested), `${projection.months} monthly SIPs`),
+      kpi('Total invested', M.inr(projection.invested), isSip ? `${projection.months} monthly SIPs` : 'Initial one-time deposit'),
       kpi('Median outcome', M.inr(projection.median), 'Middle of 2,000 paths', 'accent'),
       kpi('Downside (5th percentile)', M.inr(projection.p5), 'Plan for this, not the median'),
       kpi('Upside (95th percentile)', M.inr(projection.p95), 'Better than 95% of paths'),
-      kpi('Below contributions', M.pct(projection.prob_below_contributions), 'Probability of ending below invested'),
+      kpi(isSip ? 'Below contributions' : 'Below deposit', M.pct(projection.prob_below_contributions), isSip ? 'Probability of ending below contributions' : 'Probability of ending below deposit'),
       kpi('Median max drawdown', M.pct(projection.median_max_drawdown), `Worst 5%: ${M.pct(projection.worst_5pct_drawdown)}`),
     ].join('');
 
     $('#projectionYears').textContent = `${(projection.months / 12).toFixed(0)} years`;
     $('#projectionNote').textContent =
       'The dark band is the 25th–75th percentile; the light band is the 5th–95th. ' +
-      'The dashed line is money contributed. Returns are resampled from the last five years of ' +
-      'portfolio monthly returns.';
+      (isSip ? 'The dashed line is total money contributed over time. ' : 'The dashed line is initial deposit. ') +
+      'Returns are resampled from the last five years of portfolio monthly returns.';
 
     if (projection.bands?.length) {
       window.Charts.band($('#projectionChart'), {

@@ -11,15 +11,50 @@
   const $$ = M.$$;
 
   const profile = { ...M.DEFAULT_PROFILE, ...(M.getProfile() || {}) };
-  const controls = { age: $('#qAge'), horizon: $('#qHorizon'), sip: $('#qSip') };
-  const topics = ['', 'Investor age', 'Investment horizon', 'Monthly SIP', 'Risk tolerance'];
+  const controls = { age: $('#qAge'), horizon: $('#qHorizon') };
+  const topics = ['', 'Investor age', 'Investment horizon', 'Investment amount', 'Risk tolerance'];
 
+  let amountInput;
   let step = 1;
   let busy = false;
+
+  // Initialize AmountInput component
+  amountInput = new M.AmountInput('#amountInputRoot', {
+    defaultMode: profile.mode || 'lumpsum',
+    initialAmount: profile.amount != null ? profile.amount : 100000,
+    onModeChange: (newMode, cfg) => {
+      profile.mode = newMode;
+      const title = $('#amountScreenTitle');
+      const sub = $('#amountScreenSub');
+      if (title) title.textContent = cfg.label;
+      if (sub) sub.textContent = cfg.helper;
+    },
+    onAmountChange: (newAmount, mode) => {
+      profile.amount = newAmount;
+      profile.mode = mode;
+    },
+    onValidityChange: (isValid, newAmount, mode) => {
+      profile.amount = newAmount;
+      profile.mode = mode;
+      const next3 = $('#btnNext3');
+      if (next3) next3.disabled = !isValid;
+    },
+  });
+
+  // Set initial title and subtitle
+  if (amountInput) {
+    const cfg = M.MODE_CONFIG[amountInput.getMode()];
+    if ($('#amountScreenTitle')) $('#amountScreenTitle').textContent = cfg.label;
+    if ($('#amountScreenSub')) $('#amountScreenSub').textContent = cfg.helper;
+  }
 
   // ---------------------------------------------------------------- steps
   function setStep(next, direction = 'forward') {
     if (next < 1 || next > 4) return;
+    if (next === 4 && (!amountInput || !amountInput.isValid())) {
+      if (amountInput) amountInput.validateAndUpdate();
+      return;
+    }
     step = next;
     $('#quizStepBadge').textContent = `Question ${next} of 4`;
     $('#quizTopicTitle').textContent = topics[next];
@@ -45,21 +80,20 @@
   function sync() {
     controls.age.value = profile.age;
     controls.horizon.value = profile.horizon;
-    controls.sip.value = profile.sip;
 
     $('#ageVal').textContent = profile.age;
     $('#horVal').textContent = profile.horizon;
-    $('#sipVal').textContent = `₹${profile.sip.toLocaleString('en-IN')}`;
 
     $$('.radiocards input').forEach((radio) => {
       radio.checked = radio.value === profile.appetite;
     });
 
-    for (const [key, control] of Object.entries(controls)) {
-      $$(`.quiz-presets[data-for="${control.id}"] .preset-pill`).forEach((pill) => {
-        pill.classList.toggle('active', Number(pill.dataset.val) === profile[key]);
-      });
-    }
+    $$(`.quiz-presets[data-for="qAge"] .preset-pill`).forEach((pill) => {
+      pill.classList.toggle('active', Number(pill.dataset.val) === profile.age);
+    });
+    $$(`.quiz-presets[data-for="qHorizon"] .preset-pill`).forEach((pill) => {
+      pill.classList.toggle('active', Number(pill.dataset.val) === profile.horizon);
+    });
 
     const retireYears = Math.max(1, 65 - profile.age);
     const hint = $('#horizonRetireHint');
@@ -78,10 +112,7 @@
     profile.horizon = Number(controls.horizon.value);
     sync();
   };
-  controls.sip.oninput = () => {
-    profile.sip = Number(controls.sip.value);
-    sync();
-  };
+
   $$('.radiocards input').forEach((radio) => {
     radio.onchange = () => {
       profile.appetite = radio.value;
@@ -89,13 +120,12 @@
     };
   });
 
-  $$('.quiz-presets .preset-pill').forEach((pill) => {
+  $$('.quiz-presets[data-for="qAge"] .preset-pill, .quiz-presets[data-for="qHorizon"] .preset-pill').forEach((pill) => {
     pill.onclick = () => {
       const target = pill.closest('.quiz-presets').dataset.for;
       const value = Number(pill.dataset.val);
       if (target === 'qAge') profile.age = value;
       if (target === 'qHorizon') profile.horizon = value;
-      if (target === 'qSip') profile.sip = value;
       sync();
     };
   });
@@ -160,6 +190,12 @@
   async function finish() {
     if (busy) return;
     busy = true;
+
+    if (amountInput) {
+      profile.mode = amountInput.getMode();
+      profile.amount = amountInput.getAmount();
+    }
+
     showAnalyzing();
 
     const request = M.recommendationRequest(profile);
@@ -172,13 +208,14 @@
 
       setAnalyzingStep(3);
       $('#analyzingTitle').textContent = 'Plan ready.';
+      const isSip = result.inputs.mode === 'sip';
       $('#analyzingSub').textContent =
         `${result.allocations.length} funds · ${M.pct(result.equity_target / 100)} equity · ` +
-        `${M.inr(result.inputs.amount)}/month`;
+        `${M.inr(result.inputs.amount)}${isSip ? '/month SIP' : ' invested'}`;
 
       M.saveProfile(profile);
       M.saveRecommendation({ request, result });
-      M.toast('Plan built — opening your dashboard');
+      M.toast(`Plan built — opening ${isSip ? 'SIP' : 'lump sum'} dashboard`);
       setTimeout(() => {
         window.location.href = 'results.html';
       }, 700);
@@ -193,9 +230,14 @@
     Object.assign(profile, {
       age: 52,
       horizon: 3,
-      sip: 25000,
+      mode: 'lumpsum',
+      amount: 250000,
       appetite: 'conservative',
     });
+    if (amountInput) {
+      amountInput.setMode('lumpsum');
+      amountInput.setAmount(250000);
+    }
     sync();
     finish();
   };
